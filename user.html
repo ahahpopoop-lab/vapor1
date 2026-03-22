@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<script>
+// Firebase loader - waits for SDK before starting app
+window.fbReady = false;
+window.DB = null;
+
+function fbGet(k){
+  if(!window.DB) return Promise.resolve(null);
+  return window.DB.ref("vapor/"+k).get().then(function(s){return s.exists()?s.val():null;}).catch(function(){return null;});
+}
+function fbSet(k,v){
+  if(!window.DB) return;
+  window.DB.ref("vapor/"+k).set(v).catch(function(){});
+}
+function fbLive(k,cb){
+  if(!window.DB){return;}
+  window.DB.ref("vapor/"+k).on("value",function(s){cb(s.exists()?s.val():null);});
+}
+
+var _fbLoaded = 0;
+function _fbOnLoad(){
+  _fbLoaded++;
+  if(_fbLoaded < 2) return;
+  try{
+    firebase.initializeApp({apiKey:"AIzaSyCnmX4OCZvZkBSJiTvW6gN7FPX-PiVsRBo",authDomain:"vapor-2189e.firebaseapp.com",databaseURL:"https://vapor-2189e-default-rtdb.firebaseio.com",projectId:"vapor-2189e"});
+    window.DB = firebase.database();
+    window.fbReady = true;
+  }catch(e){}
+  if(typeof appStart==='function') appStart();
+}
+
+var _s1=document.createElement('script');
+_s1.src='https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js';
+_s1.onload=_fbOnLoad;
+_s1.onerror=function(){_fbLoaded++;if(_fbLoaded>=2&&typeof appStart==='function')appStart();};
+document.head.appendChild(_s1);
+
+var _s2=document.createElement('script');
+_s2.src='https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js';
+_s2.onload=_fbOnLoad;
+_s2.onerror=function(){_fbLoaded++;if(_fbLoaded>=2&&typeof appStart==='function')appStart();};
+document.head.appendChild(_s2);
+</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAPOR — حسابي</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060b14;--bg2:#0d1525;--bg3:#111e35;--card:#0f1c30;--border:#1e3a5f;--blue:#1b8ef8;--cyan:#00d4ff;--green:#22d97a;--red:#ff4757;--purple:#a855f7;--gold:#ffd32a;--text:#e8f0fe;--muted:#6b8cba}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.nav{position:sticky;top:0;z-index:100;background:rgba(6,11,20,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 20px}
+.nav-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px}
+.nav-logo{font-size:20px;font-weight:900;letter-spacing:3px;background:linear-gradient(135deg,#1b8ef8,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+.nav-link{color:var(--muted);font-size:13px;text-decoration:none}
+.nav-link:hover{color:var(--blue)}
+.wrap{max-width:900px;margin:0 auto;padding:32px 20px}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:48px 32px;text-align:center;max-width:420px;margin:60px auto}
+.login-icon{font-size:60px;margin-bottom:16px}
+.login-card h2{font-size:24px;font-weight:800;margin-bottom:8px}
+.login-card p{color:var(--muted);font-size:14px;margin-bottom:28px;line-height:1.6}
+.phone-input{width:100%;background:var(--bg3);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:20px;padding:14px;outline:none;text-align:center;letter-spacing:3px;transition:border-color .2s;margin-bottom:16px}
+.phone-input:focus{border-color:var(--blue)}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;border-radius:12px;color:#fff;font-family:inherit;font-size:16px;font-weight:700;padding:14px;cursor:pointer;transition:all .2s}
+.login-btn:hover{opacity:.9;transform:translateY(-1px)}
+.profile-header{display:flex;align-items:center;gap:20px;margin-bottom:28px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
+.profile-avatar{width:70px;height:70px;background:linear-gradient(135deg,var(--purple),var(--blue));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0}
+.profile-name{font-size:22px;font-weight:800;margin-bottom:4px}
+.profile-phone{color:var(--muted);font-size:14px;margin-bottom:8px}
+.logout-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:12px;padding:5px 12px;border-radius:8px;cursor:pointer}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+.sub-card{border-radius:16px;padding:24px;margin-bottom:24px}
+.sub-card.active-c{background:linear-gradient(135deg,rgba(27,142,248,.15),rgba(0,212,255,.08));border:1px solid rgba(27,142,248,.3)}
+.sub-card.expiring-c{background:linear-gradient(135deg,rgba(255,211,42,.12),rgba(255,140,66,.08));border:1px solid rgba(255,211,42,.4)}
+.sub-card.no-sub{background:var(--card);border:1px solid var(--border);text-align:center;padding:40px}
+.sub-status-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:12px}
+.s-active{background:rgba(34,217,122,.15);color:var(--green)}
+.s-expiring{background:rgba(255,211,42,.15);color:var(--gold)}
+.countdown{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.cd-box{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;min-width:70px}
+.cd-num{font-size:28px;font-weight:900;color:var(--cyan);line-height:1;font-variant-numeric:tabular-nums}
+.cd-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+.section-title-u{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title-u::after{content:'';flex:1;height:1px;background:var(--border)}
+.pkgs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:32px}
+.pkg-card-u{border-radius:14px;overflow:hidden;cursor:pointer;transition:all .25s;border:2px solid transparent}
+.pkg-card-u:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.pkg-banner-u{width:100%;height:130px;display:flex;align-items:center;justify-content:center;font-size:55px;position:relative}
+.pkg-body-u{padding:14px;background:var(--card)}
+.pkg-name-u{font-size:15px;font-weight:800;margin-bottom:6px}
+.pkg-games-u{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.pkg-game-tag-u{background:rgba(255,255,255,.06);color:var(--muted);font-size:11px;padding:2px 7px;border-radius:20px}
+.pkg-play-u{width:100%;background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;border-radius:8px;color:#fff;font-family:inherit;font-size:12px;font-weight:700;padding:8px;cursor:pointer}
+.renew-banner{background:linear-gradient(135deg,rgba(255,211,42,.1),rgba(255,140,66,.08));border:1px solid rgba(255,211,42,.3);border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.renew-banner p{font-size:13px;color:var(--gold)}
+.renew-btn{background:#25D366;border:none;border-radius:8px;color:#fff;font-family:inherit;font-size:13px;font-weight:700;padding:8px 16px;cursor:pointer;white-space:nowrap}
+/* PKG GAMES MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.pkg-games-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;transform:scale(.95);transition:transform .3s}
+.modal-overlay.open .pkg-games-modal{transform:scale(1)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-body{padding:24px}
+.close-btn{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.close-btn:hover{background:var(--bg3)}
+.games-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.game-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all .2s}
+.game-item:hover{border-color:var(--blue);transform:translateY(-2px)}
+.game-emoji{font-size:30px;margin-bottom:6px}
+.game-name{font-size:13px;font-weight:600;margin-bottom:8px}
+.game-play-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;border-radius:6px;color:#fff;font-family:inherit;font-size:11px;font-weight:700;padding:6px;cursor:pointer}
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;min-width:200px;animation:toastIn .3s ease}
+.toast.success{border-color:var(--green)}.toast.error{border-color:var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:600px){.profile-header{flex-direction:column;text-align:center}.countdown{justify-content:center}.pkgs-grid{grid-template-columns:1fr 1fr}}
+
+/* BIG COUNTDOWN */
+.big-countdown{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;margin-bottom:24px;text-align:center}
+.big-countdown-label{font-size:14px;color:var(--muted);margin-bottom:16px;font-weight:600}
+.big-cd-row{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.big-cd-box{background:var(--bg);border:2px solid var(--border);border-radius:16px;padding:16px 20px;text-align:center;min-width:80px;position:relative;overflow:hidden}
+.big-cd-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.big-cd-box.days::before{background:var(--blue)}
+.big-cd-box.hours::before{background:var(--cyan)}
+.big-cd-box.mins::before{background:var(--green)}
+.big-cd-box.secs::before{background:var(--purple)}
+.big-cd-num{font-size:42px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.big-cd-num.days-n{color:var(--blue)}
+.big-cd-num.hours-n{color:var(--cyan)}
+.big-cd-num.mins-n{color:var(--green)}
+.big-cd-num.secs-n{color:var(--purple)}
+.big-cd-lbl{font-size:11px;color:var(--muted);margin-top:4px;font-weight:600}
+.big-cd-box.warning .big-cd-num{color:var(--yellow)!important}
+.big-cd-box.danger .big-cd-num{color:var(--red)!important;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.cd-progress{width:100%;height:6px;background:rgba(255,255,255,.06);border-radius:3px;margin-top:16px;overflow:hidden}
+.cd-progress-fill{height:100%;border-radius:3px;transition:width 1s linear;background:linear-gradient(to right,var(--green),var(--cyan))}
+
+/* EXPIRED SCREEN */
+.expired-screen{position:fixed;inset:0;background:rgba(6,11,20,.98);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;backdrop-filter:blur(20px)}
+.expired-screen.show{display:flex}
+.expired-icon{font-size:80px;margin-bottom:24px;animation:floatIcon 3s ease-in-out infinite}
+@keyframes floatIcon{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.expired-title{font-size:32px;font-weight:900;color:var(--red);margin-bottom:12px}
+.expired-sub{color:var(--muted);font-size:16px;margin-bottom:32px;line-height:1.7;max-width:400px}
+.expired-btn{background:#25D366;border:none;border-radius:14px;color:#fff;font-family:inherit;font-size:16px;font-weight:700;padding:16px 36px;cursor:pointer;margin-bottom:12px;width:100%;max-width:320px}
+.expired-btn-sec{background:transparent;border:1px solid var(--border);border-radius:14px;color:var(--muted);font-family:inherit;font-size:14px;padding:12px 32px;cursor:pointer;width:100%;max-width:320px}
+.expired-btn-sec:hover{border-color:var(--blue);color:var(--blue)}
+.expired-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">⚡ VAPOR</a>
+    <a class="nav-link" href="index.html">← العودة للمتجر</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div id="loginSection">
+    <div class="login-card">
+      <div class="login-icon">🎮</div>
+      <h2>أهلاً بك في VAPOR</h2>
+      <p>أدخل رقم جوالك لتشوف اشتراكك وتلعب بكجاتك</p>
+      <input class="phone-input" id="phoneInput" type="tel" placeholder="07XXXXXXXXX" onkeydown="if(event.key==='Enter')checkAccess()">
+      <button class="login-btn" onclick="checkAccess()">🔍 تحقق من اشتراكي</button>
+    </div>
+  </div>
+
+  <div id="profileSection" style="display:none">
+    <div class="profile-header">
+      <div class="profile-avatar">👤</div>
+      <div style="flex:1">
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-phone" id="profilePhone">—</div>
+        <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+      </div>
+    </div>
+
+    <div id="subCard"></div>
+
+    <div class="renew-banner" id="renewBanner" style="display:none">
+      <p>⚠️ اشتراكك ينتهي قريباً — تواصل معنا لتجديده</p>
+      <button class="renew-btn" onclick="openWhatsApp()">📲 تجديد عبر واتساب</button>
+    </div>
+
+    <div id="pkgsSection" style="display:none">
+      <div class="section-title-u">📦 بكجاتك</div>
+      <div class="pkgs-grid" id="pkgsGrid"></div>
+    </div>
+
+    <div id="noSubSection" style="display:none;text-align:center;padding:40px 0">
+      <div style="font-size:60px;margin-bottom:16px">🔒</div>
+      <h3 style="margin-bottom:8px">ما عندك اشتراك نشط</h3>
+      <p style="color:var(--muted);margin-bottom:24px">تواصل معنا لتفعيل اشتراكك</p>
+      <button onclick="openWhatsApp()" style="background:#25D366;border:none;border-radius:12px;color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:14px 28px;cursor:pointer">📲 تواصل عبر واتساب</button>
+    </div>
+  </div>
+</div>
+
+<!-- PKG GAMES MODAL -->
+<div class="modal-overlay" id="pkgGamesModal">
+  <div class="pkg-games-modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalPkgName" style="font-size:18px;font-weight:900"></h2>
+        <div id="modalPkgDesc" style="font-size:13px;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <button class="close-btn" onclick="closePkgModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="games-list" id="modalGamesList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPIRED SCREEN -->
+<div class="expired-screen" id="expiredScreen">
+  <div class="expired-particles" id="particles"></div>
+  <div style="position:relative;z-index:1;width:100%;max-width:420px">
+    <div class="expired-icon">⏰</div>
+    <div class="expired-title">انتهى اشتراكك!</div>
+    <div class="expired-sub">انتهت مدة اشتراكك في VAPOR<br>جدّد الآن واستمر باللعب 🎮</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:24px;font-size:13px;color:var(--muted)">
+      📱 <span id="expiredPhone"></span>
+    </div>
+    <button class="expired-btn" onclick="renewWhatsApp()">📲 تجديد عبر واتساب</button>
+    <button class="expired-btn-sec" onclick="document.getElementById('expiredScreen').classList.remove('show')">لاحقاً</button>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script>
+const KEYS={packages:'vapor_packages',access:'vapor_access'};
+let userPhone='',userAccess=null,allPkgs=[],cdInterval=null;
+
+function init(){
+  const saved=localStorage.getItem('vapor_user_phone');
+  if(saved){document.getElementById('phoneInput').value=saved;checkAccess();}
+}
+
+async function checkAccess(){
+  const ph=document.getElementById('phoneInput').value.trim();
+  if(!ph||ph.length<7){showToast('⚠️ أدخل رقم جوال صحيح','error');return;}
+  const btn=document.querySelector('.login-btn');
+  if(btn){btn.textContent='⏳ جاري التحقق...';btn.disabled=true;}
+  userPhone=ph;localStorage.setItem('vapor_user_phone',ph);
+  try{
+    const [pkgData,accData]=await Promise.all([fbGet('packages'),fbGet('access')]);
+    allPkgs=Array.isArray(pkgData)?pkgData:(pkgData?Object.values(pkgData):[]);
+    const accessList=Array.isArray(accData)?accData:(accData?Object.values(accData):[]);
+    localStorage.setItem(KEYS.packages,JSON.stringify(allPkgs));
+    localStorage.setItem(KEYS.access,JSON.stringify(accessList));
+    userAccess=accessList.find(a=>{
+      const ap=a.phone.replace(/[^0-9]/g,''),up=ph.replace(/[^0-9]/g,'');
+      return(ap===up||ap.endsWith(up)||up.endsWith(ap));
+    })||null;
+  }catch(e){
+    try{allPkgs=JSON.parse(localStorage.getItem(KEYS.packages)||'[]');}catch{allPkgs=[];}
+    const accessList=JSON.parse(localStorage.getItem(KEYS.access)||'[]');
+    userAccess=accessList.find(a=>{
+      const ap=a.phone.replace(/[^0-9]/g,''),up=ph.replace(/[^0-9]/g,'');
+      return(ap===up||ap.endsWith(up)||up.endsWith(ap));
+    })||null;
+  }
+  if(btn){btn.textContent='🔍 تحقق من اشتراكي';btn.disabled=false;}
+  document.getElementById('loginSection').style.display='none';
+  document.getElementById('profileSection').style.display='block';
+  renderProfile();
+}
+
+function renderProfile(){
+  document.getElementById('profilePhone').textContent='📱 '+userPhone;
+  const now=new Date();
+  const noSub=document.getElementById('noSubSection');
+  const pkgsSec=document.getElementById('gamesSection')||document.getElementById('pkgsSection');
+  const subCard=document.getElementById('subCard');
+  const renewBanner=document.getElementById('renewBanner');
+
+  if(!userAccess||userAccess.status==='expired'||new Date(userAccess.expiresAt)<now){
+    document.getElementById('profileName').textContent='مشترك';
+    subCard.innerHTML='<div class="sub-card no-sub"><div style="font-size:50px;margin-bottom:12px">🔒</div><p style="color:var(--muted)">لا يوجد اشتراك نشط</p></div>';
+    noSubSection.style.display='block';
+    if(pkgsSec)pkgsSec.style.display='none';
+    renewBanner.style.display='none';return;
+  }
+
+  document.getElementById('profileName').textContent=userAccess.name;
+  noSubSection.style.display='none';
+  const exp=new Date(userAccess.expiresAt),leftH=(exp-now)/1000/3600,leftD=leftH/24;
+  let sc='active-c',sl='🟢 نشط',ss='s-active';
+  if(leftH<=24){sc='expiring-c';sl='⚠️ ينتهي اليوم';ss='s-expiring';renewBanner.style.display='flex';}
+  else if(leftD<=3){sc='expiring-c';sl='⚠️ ينتهي قريباً';ss='s-expiring';renewBanner.style.display='flex';}
+  else{renewBanner.style.display='none';}
+
+  const totalSecs = (exp - now) / 1000;
+  subCard.innerHTML=`<div class="sub-card ${sc}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <span class="sub-status-label ${ss}">${sl}</span>
+      <span style="font-size:12px;color:var(--muted)">📅 ينتهي: ${exp.toLocaleDateString('ar-IQ',{year:'numeric',month:'long',day:'numeric'})}</span>
+    </div>
+    <div class="big-countdown-label">⏱ الوقت المتبقي للانتهاء</div>
+    <div class="big-cd-row" id="bigCountdown">
+      <div class="big-cd-box days"><div class="big-cd-num days-n" id="cdDays">00</div><div class="big-cd-lbl">يوم</div></div>
+      <div class="big-cd-box hours"><div class="big-cd-num hours-n" id="cdHours">00</div><div class="big-cd-lbl">ساعة</div></div>
+      <div class="big-cd-box mins"><div class="big-cd-num mins-n" id="cdMins">00</div><div class="big-cd-lbl">دقيقة</div></div>
+      <div class="big-cd-box secs"><div class="big-cd-num secs-n" id="cdSecs">00</div><div class="big-cd-lbl">ثانية</div></div>
+    </div>
+    <div class="cd-progress"><div class="cd-progress-fill" id="cdProgress" style="width:100%"></div></div>
+  </div>`;
+
+  updateCountdown(totalSecs);
+  if(cdInterval)clearInterval(cdInterval);
+  cdInterval=setInterval(()=>updateCountdown(totalSecs),1000);
+
+  const myPkgs=allPkgs.filter(p=>(userAccess.pkgs||[]).includes(p.id)&&p.active!==false);
+  const ps=document.getElementById('pkgsSection');
+  if(myPkgs.length&&ps){
+    ps.style.display='block';
+    document.getElementById('pkgsGrid').innerHTML=myPkgs.map(p=>`
+      <div class="pkg-card-u" style="border-color:${p.color||'#1e3a5f'}" onclick="openPkgGames('${p.id}')">
+        <div class="pkg-banner-u" style="background:${p.bg||'linear-gradient(135deg,#0f1c30,#1e3a5f)'}">
+          <span style="position:relative;z-index:1">${p.emoji||'📦'}</span>
+        </div>
+        <div class="pkg-body-u">
+          <div class="pkg-name-u">${p.name}</div>
+          <div class="pkg-games-u">${(p.games||[]).slice(0,3).map(g=>`<span class="pkg-game-tag-u">${g.emoji||'🎮'} ${g.name}</span>`).join('')}${(p.games||[]).length>3?`<span class="pkg-game-tag-u">+${p.games.length-3}</span>`:''}</div>
+          <button class="pkg-play-u">▶ افتح البكج</button>
+        </div>
+      </div>`).join('');
+  }else if(ps){ps.style.display='none';}
+}
+
+function updateCountdown(totalSecs){
+  if(!userAccess) return;
+  const left = new Date(userAccess.expiresAt) - new Date();
+  if(left <= 0){
+    // Show expired screen
+    clearInterval(cdInterval);
+    document.getElementById('expiredPhone').textContent = userPhone;
+    document.getElementById('expiredScreen').classList.add('show');
+    // Update access status
+    userAccess.status = 'expired';
+    return;
+  }
+  const d=Math.floor(left/1000/3600/24);
+  const h=Math.floor((left/1000/3600)%24);
+  const m=Math.floor((left/1000/60)%60);
+  const s=Math.floor((left/1000)%60);
+  
+  const dEl=document.getElementById('cdDays');
+  const hEl=document.getElementById('cdHours');
+  const mEl=document.getElementById('cdMins');
+  const sEl=document.getElementById('cdSecs');
+  if(!dEl)return;
+  
+  dEl.textContent=String(d).padStart(2,'0');
+  hEl.textContent=String(h).padStart(2,'0');
+  mEl.textContent=String(m).padStart(2,'0');
+  sEl.textContent=String(s).padStart(2,'0');
+  
+  // Color warnings
+  const boxes=document.querySelectorAll('.big-cd-box');
+  boxes.forEach(b=>{ b.classList.remove('warning','danger'); });
+  if(d===0 && h<24){ boxes.forEach(b=>b.classList.add('warning')); }
+  if(d===0 && h===0 && m<30){ boxes.forEach(b=>{ b.classList.remove('warning'); b.classList.add('danger'); }); }
+  
+  // Progress bar
+  if(totalSecs){
+    const pct = Math.min(100, (left/1000/totalSecs)*100);
+    const prog=document.getElementById('cdProgress');
+    if(prog){
+      prog.style.width=pct+'%';
+      prog.style.background = pct>50?'linear-gradient(to right,var(--green),var(--cyan))':pct>20?'linear-gradient(to right,var(--yellow),var(--orange))':'var(--red)';
+    }
+  }
+}
+
+function renewWhatsApp(){
+  const msg=encodeURIComponent('مرحباً، أريد تجديد اشتراك VAPOR\nرقمي: '+userPhone);
+  window.open('https://wa.me/9647715240130?text='+msg,'_blank');
+}
+
+function openPkgGames(id){
+  const p=allPkgs.find(x=>x.id===id);if(!p)return;
+  document.getElementById('modalPkgName').textContent=p.emoji+' '+p.name;
+  document.getElementById('modalPkgDesc').textContent=p.desc||'';
+  const games=p.games||[];
+  document.getElementById('modalGamesList').innerHTML=games.length?games.map(g=>`
+    <div class="game-item">
+      <div class="game-emoji">${g.emoji||'🎮'}</div>
+      <div class="game-name">${g.name}</div>
+      ${g.url?`<button class="game-play-btn" onclick="window.open('${g.url}','_blank')">▶ العب الآن</button>`:`<div style="font-size:11px;color:var(--muted)">قريباً</div>`}
+    </div>`).join(''):'<div style="color:var(--muted);font-size:13px;padding:20px;text-align:center">لا توجد ألعاب محددة بعد</div>';
+  document.getElementById('pkgGamesModal').classList.add('open');
+}
+function closePkgModal(){document.getElementById('pkgGamesModal').classList.remove('open');}
+document.getElementById('pkgGamesModal').addEventListener('click',function(e){if(e.target===this)closePkgModal();});
+
+function openWhatsApp(){const msg=encodeURIComponent('مرحباً، أريد تجديد اشتراك VAPOR\nرقمي: '+userPhone);window.open('https://wa.me/9647715240130?text='+msg,'_blank');}
+function logout(){localStorage.removeItem('vapor_user_phone');userPhone='';userAccess=null;if(cdInterval)clearInterval(cdInterval);document.getElementById('loginSection').style.display='block';document.getElementById('profileSection').style.display='none';document.getElementById('phoneInput').value='';}
+function showToast(msg,type='success'){const c=document.getElementById('toastContainer');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),3000);}
+
+appStart = init;
+</script>
+</body>
+</html>
