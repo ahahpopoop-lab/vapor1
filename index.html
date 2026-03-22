@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<script>
+// Firebase loader - waits for SDK before starting app
+window.fbReady = false;
+window.DB = null;
+
+function fbGet(k){
+  if(!window.DB) return Promise.resolve(null);
+  return window.DB.ref("vapor/"+k).get().then(function(s){return s.exists()?s.val():null;}).catch(function(){return null;});
+}
+function fbSet(k,v){
+  if(!window.DB) return;
+  window.DB.ref("vapor/"+k).set(v).catch(function(){});
+}
+function fbLive(k,cb){
+  if(!window.DB){return;}
+  window.DB.ref("vapor/"+k).on("value",function(s){cb(s.exists()?s.val():null);});
+}
+
+var _fbLoaded = 0;
+function _fbOnLoad(){
+  _fbLoaded++;
+  if(_fbLoaded < 2) return;
+  try{
+    firebase.initializeApp({apiKey:"AIzaSyCnmX4OCZvZkBSJiTvW6gN7FPX-PiVsRBo",authDomain:"vapor-2189e.firebaseapp.com",databaseURL:"https://vapor-2189e-default-rtdb.firebaseio.com",projectId:"vapor-2189e"});
+    window.DB = firebase.database();
+    window.fbReady = true;
+  }catch(e){}
+  if(typeof appStart==='function') appStart();
+}
+
+var _s1=document.createElement('script');
+_s1.src='https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js';
+_s1.onload=_fbOnLoad;
+_s1.onerror=function(){_fbLoaded++;if(_fbLoaded>=2&&typeof appStart==='function')appStart();};
+document.head.appendChild(_s1);
+
+var _s2=document.createElement('script');
+_s2.src='https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js';
+_s2.onload=_fbOnLoad;
+_s2.onerror=function(){_fbLoaded++;if(_fbLoaded>=2&&typeof appStart==='function')appStart();};
+document.head.appendChild(_s2);
+</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAPOR — اشترك والعب بلا حدود</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060b14;--bg2:#0d1525;--bg3:#111e35;--card:#0f1c30;--border:#1e3a5f;--blue:#1b8ef8;--cyan:#00d4ff;--green:#22d97a;--red:#ff4757;--purple:#a855f7;--gold:#ffd32a;--text:#e8f0fe;--muted:#6b8cba}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.nav{position:sticky;top:0;z-index:1000;background:rgba(6,11,20,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 20px}
+.nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:14px;height:60px}
+.nav-logo{font-size:22px;font-weight:900;letter-spacing:3px;background:linear-gradient(135deg,#1b8ef8,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;white-space:nowrap}
+.nav-search{flex:1;max-width:360px;display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0 12px;height:38px}
+.nav-search input{background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:14px;width:100%}
+.nav-search input::placeholder{color:var(--muted)}
+.nav-actions{margin-right:auto;display:flex;align-items:center;gap:8px}
+.nav-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;padding:7px 14px;transition:all .2s;white-space:nowrap}
+.nav-btn:hover{border-color:var(--blue);color:var(--blue)}
+.nav-btn.primary{background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;color:#fff;font-weight:700}
+.nav-btn.primary:hover{opacity:.9;transform:translateY(-1px)}
+/* HERO */
+.hero{background:linear-gradient(135deg,#060b14 0%,#0a1628 50%,#06101e 100%);border-bottom:1px solid var(--border);padding:60px 20px 50px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,rgba(27,142,248,.18) 0%,transparent 65%)}
+.hero-content{position:relative;max-width:800px;margin:0 auto}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);color:#c084fc;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:20px}
+.hero h1{font-size:clamp(30px,5vw,54px);font-weight:900;line-height:1.15;margin-bottom:14px}
+.hero h1 span{background:linear-gradient(135deg,#1b8ef8,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{color:var(--muted);font-size:16px;margin-bottom:32px;line-height:1.7}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:40px}
+.cta-main{background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;border-radius:12px;color:#fff;font-family:inherit;font-size:16px;font-weight:700;padding:14px 32px;cursor:pointer;transition:all .3s;box-shadow:0 4px 20px rgba(27,142,248,.35)}
+.cta-main:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(27,142,248,.5)}
+.cta-sec{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:16px;font-weight:600;padding:14px 28px;cursor:pointer;transition:all .2s}
+.cta-sec:hover{border-color:var(--blue);color:var(--blue)}
+.hero-stats{display:flex;justify-content:center;gap:36px;flex-wrap:wrap}
+.hero-stat .num{font-size:26px;font-weight:900;color:var(--cyan)}
+.hero-stat .lbl{font-size:11px;color:var(--muted)}
+/* PLANS */
+.plans-section{max-width:1200px;margin:0 auto;padding:60px 20px}
+.section-heading{text-align:center;margin-bottom:40px}
+.section-heading h2{font-size:28px;font-weight:900;margin-bottom:8px}
+.section-heading p{color:var(--muted);font-size:15px}
+.plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all .3s;position:relative}
+.plan-card:hover{transform:translateY(-4px);border-color:var(--blue)}
+.plan-card.popular{border-color:var(--blue);box-shadow:0 0 30px rgba(27,142,248,.2)}
+.popular-badge{position:absolute;top:-12px;right:50%;transform:translateX(50%);background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
+.plan-icon{font-size:32px;margin-bottom:14px}
+.plan-name{font-size:20px;font-weight:800;margin-bottom:4px}
+.plan-desc{color:var(--muted);font-size:13px;margin-bottom:20px}
+.plan-price{display:flex;align-items:baseline;gap:4px;margin-bottom:20px}
+.plan-price .amount{font-size:40px;font-weight:900;color:var(--green)}
+.plan-price .period{color:var(--muted);font-size:13px}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.plan-features li{display:flex;align-items:center;gap:8px;font-size:13px}
+.plan-features li.dim{color:var(--muted)}
+.check{color:var(--green)}.x{color:var(--muted)}
+.plan-btn{width:100%;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;cursor:pointer;transition:all .2s}
+.plan-btn.outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.plan-btn.outline:hover{border-color:var(--blue);color:var(--blue)}
+.plan-btn.filled{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff}
+.plan-btn.filled:hover{opacity:.9;transform:translateY(-1px)}
+.plan-btn.purple-btn{background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff}
+.plan-btn.purple-btn:hover{opacity:.9;transform:translateY(-1px)}
+/* PACKAGES */
+.section{max-width:1400px;margin:0 auto;padding:32px 20px}
+.section-title{font-size:22px;font-weight:800;margin-bottom:24px;display:flex;align-items:center;gap:10px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.pkg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.pkg-card{border-radius:16px;overflow:hidden;cursor:pointer;transition:all .3s;position:relative;border:2px solid transparent}
+.pkg-card:hover{transform:translateY(-6px);box-shadow:0 16px 50px rgba(0,0,0,.4)}
+.pkg-banner{width:100%;height:160px;display:flex;align-items:center;justify-content:center;font-size:70px;position:relative}
+.pkg-banner-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.8) 0%,transparent 60%)}
+.pkg-badge{position:absolute;top:12px;right:12px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;backdrop-filter:blur(8px)}
+.pkg-body{padding:16px;background:var(--card)}
+.pkg-name{font-size:18px;font-weight:900;margin-bottom:6px}
+.pkg-desc{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.pkg-games-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.pkg-game-tag{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--muted);font-size:11px;padding:3px 8px;border-radius:20px}
+.pkg-footer{display:flex;align-items:center;justify-content:space-between}
+.pkg-count{font-size:12px;color:var(--muted)}
+.pkg-play-btn{background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;border-radius:8px;color:#fff;font-family:inherit;font-size:12px;font-weight:700;padding:7px 16px;cursor:pointer;transition:all .2s}
+.pkg-play-btn:hover{opacity:.9}
+.empty-state{text-align:center;padding:80px 20px;color:var(--muted)}
+.empty-state .icon{font-size:60px;margin-bottom:16px}
+.empty-state h3{font-size:20px;color:var(--text);margin-bottom:8px}
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;transform:scale(.95);transition:transform .3s}
+.modal-overlay.open .modal{transform:scale(1)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h2{font-size:20px;font-weight:700}
+.modal-body{padding:24px}
+.close-btn{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.close-btn:hover{background:var(--bg3);color:var(--text)}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--blue)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+select.form-input option{background:var(--bg2)}
+.plan-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.plan-option{background:var(--bg3);border:2px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s}
+.plan-option:hover,.plan-option.selected{border-color:var(--blue);background:rgba(27,142,248,.1)}
+.plan-option .p-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.plan-option .p-price{font-size:16px;font-weight:900;color:var(--green)}
+.plan-option .p-period{font-size:10px;color:var(--muted)}
+.sub-summary{background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:20px}
+.sub-summary h3{font-size:13px;color:var(--muted);margin-bottom:12px}
+.sub-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.sub-divider{height:1px;background:var(--border);margin:10px 0}
+.sub-total{display:flex;justify-content:space-between;font-size:16px;font-weight:700}
+.sub-total span:last-child{color:var(--green)}
+.submit-btn{width:100%;background:var(--green);border:none;border-radius:10px;color:#000;font-family:inherit;font-size:15px;font-weight:700;padding:14px;cursor:pointer;transition:all .2s}
+.submit-btn:hover{background:#1bc96a;transform:translateY(-1px)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.success-modal{background:var(--bg2);border:1px solid var(--green);border-radius:16px;width:100%;max-width:400px;padding:40px;text-align:center;transform:scale(.95);transition:transform .3s}
+.modal-overlay.open .success-modal{transform:scale(1)}
+.success-icon{font-size:60px;margin-bottom:16px}
+.success-modal h2{font-size:24px;font-weight:700;margin-bottom:8px;color:var(--green)}
+.success-modal p{color:var(--muted);font-size:14px;margin-bottom:6px}
+.sub-number{font-size:20px;font-weight:900;color:var(--cyan)}
+.continue-btn{margin-top:24px;width:100%;background:var(--blue);border:none;border-radius:10px;color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:12px;cursor:pointer}
+/* PKG DETAIL MODAL */
+.pkg-detail-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;transform:scale(.95);transition:transform .3s}
+.modal-overlay.open .pkg-detail-modal{transform:scale(1)}
+.pkg-detail-banner{width:100%;height:200px;display:flex;align-items:center;justify-content:center;font-size:80px;border-radius:16px 16px 0 0;position:relative}
+.pkg-detail-body{padding:24px}
+.pkg-games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:16px 0}
+.pkg-game-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;font-size:12px;cursor:pointer;transition:all .2s}
+.pkg-game-item:hover{border-color:var(--blue);transform:translateY(-2px)}
+.pkg-game-item .g-emoji{font-size:24px;margin-bottom:4px}
+.pkg-game-item .g-name{font-weight:600;color:var(--text)}
+.pkg-game-item .g-play{margin-top:6px;background:var(--blue);border:none;border-radius:6px;color:#fff;font-family:inherit;font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer;width:100%}
+.pkg-included-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(34,217,122,.12);border:1px solid rgba(34,217,122,.3);color:var(--green);padding:6px 14px;border-radius:8px;font-size:13px;font-weight:700;margin-bottom:16px}
+.pkg-play-all{width:100%;background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;border-radius:10px;color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:14px;cursor:pointer;transition:all .2s;margin-top:8px}
+.pkg-play-all:hover{opacity:.9;transform:translateY(-1px)}
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;min-width:220px;max-width:300px;animation:toastIn .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.success{border-color:var(--green)}.toast.error{border-color:var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.footer{background:var(--bg2);border-top:1px solid var(--border);text-align:center;padding:24px 20px;color:var(--muted);font-size:13px;margin-top:40px}
+/* SUB BANNER */
+.sub-top-banner{background:linear-gradient(135deg,rgba(34,217,122,.15),rgba(0,212,255,.1));border-bottom:2px solid rgba(34,217,122,.4);padding:10px 20px;text-align:center;display:none;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;position:sticky;top:60px;z-index:900;backdrop-filter:blur(12px)}
+.sub-top-banner.show{display:flex}
+.sub-top-banner span{font-size:14px;font-weight:700;color:var(--green)}
+.sub-top-banner .sub-user-info{font-size:12px;color:var(--muted)}
+.sub-top-banner .view-sub-btn{background:rgba(34,217,122,.15);border:1px solid rgba(34,217,122,.4);border-radius:8px;color:var(--green);font-family:inherit;font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer;transition:all .2s}
+.sub-top-banner .view-sub-btn:hover{background:var(--green);color:#000}
+
+@media(max-width:900px){.plans-grid{grid-template-columns:1fr}.pkg-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.nav-btn:not(.primary){display:none}.hero{padding:40px 16px 36px}.hero-stats{gap:20px}.pkg-grid{grid-template-columns:1fr}.plan-selector{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.toast-container{left:16px;right:16px}.toast{min-width:unset}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">⚡ VAPOR</a>
+    <div class="nav-search"><span>🔍</span><input type="text" id="searchInput" placeholder="ابحث عن بكج..."></div>
+    <div class="nav-actions">
+      <button class="nav-btn" onclick="window.location.href='user.html'">👤 حسابي</button>
+      <button class="nav-btn primary" onclick="openSubModal()">اشترك الآن</button>
+    </div>
+  </div>
+</nav>
+
+<!-- SUBSCRIBER BANNER -->
+<div class="sub-top-banner" id="subTopBanner">
+  <span>✅ أنت مشترك في VAPOR!</span>
+  <span class="sub-user-info" id="bannerUserInfo"></span>
+  <button class="view-sub-btn" onclick="window.location.href='user.html'">عرض اشتراكي ←</button>
+</div>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">🎮 منصة الاشتراك #١ في العراق</div>
+    <h1>العب <span>بلا حدود</span><br>باشتراك شهري واحد</h1>
+    <p>بكجات ألعاب حصرية — وصول فوري — ألغِ في أي وقت</p>
+    <div class="hero-cta">
+      <button class="cta-main" onclick="document.getElementById('plansSection').scrollIntoView({behavior:'smooth'})">ابدأ الاشتراك ←</button>
+      <button class="cta-sec" onclick="document.getElementById('pkgsSection').scrollIntoView({behavior:'smooth'})">تصفح البكجات</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num" id="statPkgs">0</div><div class="lbl">بكج متاح</div></div>
+      <div class="hero-stat"><div class="num" id="statSubs">0</div><div class="lbl">مشترك نشط</div></div>
+      <div class="hero-stat"><div class="num">٢٤/٧</div><div class="lbl">دعم فني</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="plans-section" id="plansSection">
+  <div class="section-heading"><h2>💎 اختر خطتك</h2><p>جميع الخطط تشمل وصولاً لكامل البكجات</p></div>
+  <div class="plans-grid">
+    <div class="plan-card">
+      <div class="plan-icon">🎮</div><div class="plan-name">أساسي</div><div class="plan-desc">مثالي للمبتدئين</div>
+      <div class="plan-price"><span class="amount">5,000</span><span class="period">IQD / شهر</span></div>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> وصول لبكج واحد</li>
+        <li><span class="check">✓</span> جهاز واحد</li>
+        <li><span class="check">✓</span> دعم فني</li>
+        <li class="dim"><span class="x">✕</span> البكجات الحصرية</li>
+        <li class="dim"><span class="x">✕</span> وصول مبكر</li>
+      </ul>
+      <button class="plan-btn outline" onclick="openSubModal('basic')">ابدأ الآن</button>
+    </div>
+    <div class="plan-card popular">
+      <div class="popular-badge">⚡ الأكثر شيوعاً</div>
+      <div class="plan-icon">🚀</div><div class="plan-name">برو</div><div class="plan-desc">الخيار الأمثل للاعبين</div>
+      <div class="plan-price"><span class="amount">10,000</span><span class="period">IQD / شهر</span></div>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> وصول لجميع البكجات</li>
+        <li><span class="check">✓</span> حتى 3 أجهزة</li>
+        <li><span class="check">✓</span> البكجات الحصرية</li>
+        <li><span class="check">✓</span> أولوية الوصول</li>
+        <li class="dim"><span class="x">✕</span> وصول مبكر</li>
+      </ul>
+      <button class="plan-btn filled" onclick="openSubModal('pro')">اشترك في برو</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-icon">👑</div><div class="plan-name">بريميم</div><div class="plan-desc">التجربة الكاملة</div>
+      <div class="plan-price"><span class="amount">18,000</span><span class="period">IQD / شهر</span></div>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> كل ما في برو</li>
+        <li><span class="check">✓</span> حتى 6 أجهزة</li>
+        <li><span class="check">✓</span> وصول مبكر للبكجات</li>
+        <li><span class="check">✓</span> بكج مجاني كل شهر</li>
+        <li><span class="check">✓</span> أولوية دعم فني</li>
+      </ul>
+      <button class="plan-btn purple-btn" onclick="openSubModal('premium')">احصل على بريميم</button>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="pkgsSection">
+  <div class="section-title">📦 البكجات المتاحة</div>
+  <div class="pkg-grid" id="pkgGrid">
+    <div class="empty-state"><div class="icon">📦</div><h3>لا توجد بكجات بعد</h3><p>سيقوم المسؤول بإضافة البكجات قريباً</p></div>
+  </div>
+</div>
+
+<footer class="footer"><p>© 2025 VAPOR — منصة الاشتراك الأولى في العراق</p></footer>
+
+<!-- SUBSCRIBE MODAL -->
+<div class="modal-overlay" id="subModal">
+  <div class="modal">
+    <div class="modal-header"><h2>🚀 اشتراك جديد</h2><button class="close-btn" onclick="closeSubModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <div class="form-label">اختر خطتك</div>
+        <div class="plan-selector">
+          <div class="plan-option" id="opt-basic" onclick="selectPlan('basic')"><div class="p-name">أساسي</div><div class="p-price">5,000</div><div class="p-period">IQD/شهر</div></div>
+          <div class="plan-option selected" id="opt-pro" onclick="selectPlan('pro')"><div class="p-name">⚡ برو</div><div class="p-price">10,000</div><div class="p-period">IQD/شهر</div></div>
+          <div class="plan-option" id="opt-premium" onclick="selectPlan('premium')"><div class="p-name">👑 بريميم</div><div class="p-price">18,000</div><div class="p-period">IQD/شهر</div></div>
+        </div>
+      </div>
+      <div class="sub-summary">
+        <h3>ملخص الاشتراك</h3>
+        <div class="sub-row"><span id="summaryPlan">خطة برو</span><span></span></div>
+        <div class="sub-row"><span>المدة</span><span>شهري — يتجدد تلقائياً</span></div>
+        <div class="sub-divider"></div>
+        <div class="sub-total"><span>المبلغ الشهري</span><span id="summaryPrice">10,000 IQD</span></div>
+      </div>
+      <div class="form-group"><label class="form-label">الاسم الكامل *</label><input class="form-input" id="custName" type="text" placeholder="محمد علي"></div>
+      <div class="form-group"><label class="form-label">رقم الجوال *</label><input class="form-input" id="custPhone" type="tel" placeholder="07XXXXXXXXX"></div>
+      <div class="form-group"><label class="form-label">طريقة الدفع</label>
+        <select class="form-input" id="payMethod" onchange="toggleCardFields()">
+          <option value="mastercard">ماستر كارد</option>
+          <option value="balance">رصيد</option>
+        </select>
+      </div>
+      <div id="cardFields">
+        <div class="form-group"><label class="form-label">رقم البطاقة</label><input class="form-input" id="cardNum" type="text" placeholder="XXXX XXXX XXXX XXXX" maxlength="19"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">تاريخ الانتهاء</label><input class="form-input" id="cardExp" type="text" placeholder="MM/YY" maxlength="5"></div>
+          <div class="form-group"><label class="form-label">CVV</label><input class="form-input" id="cardCvv" type="text" placeholder="XXX" maxlength="3"></div>
+        </div>
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="submitSub()">✓ تأكيد الاشتراك</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="successModal">
+  <div class="success-modal">
+    <div class="success-icon">🎉</div>
+    <h2>مرحباً بك في VAPOR!</h2>
+    <p>رقم اشتراكك:</p>
+    <div class="sub-number" id="successSubNum">#000000</div>
+    <p style="margin-top:10px">سيتم تحويلك إلى واتساب لإتمام التفعيل 💬</p>
+    <button class="continue-btn" onclick="goWhatsApp()">📲 انتقل إلى واتساب</button>
+  </div>
+</div>
+
+<!-- PKG DETAIL MODAL -->
+<div class="modal-overlay" id="pkgDetailModal">
+  <div class="pkg-detail-modal">
+    <div class="pkg-detail-banner" id="pkgDetailBanner"></div>
+    <div class="pkg-detail-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <h2 id="pkgDetailName" style="font-size:22px;font-weight:900"></h2>
+        <button class="close-btn" onclick="closePkgDetail()">✕</button>
+      </div>
+      <div id="pkgDetailDesc" style="color:var(--muted);font-size:14px;margin-bottom:12px;line-height:1.6"></div>
+      <div class="pkg-included-tag">✓ مشمول في الاشتراك</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">الألعاب في هذا البكج:</div>
+      <div class="pkg-games-grid" id="pkgDetailGames"></div>
+      <button class="pkg-play-all" onclick="handlePkgPlay()">▶ العب الآن</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAY PROMPT MODAL -->
+<div class="modal-overlay" id="playPrompt">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;width:100%;max-width:380px;padding:36px;text-align:center;transform:scale(.95);transition:transform .3s">
+    <div style="font-size:56px;margin-bottom:16px">🎮</div>
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:8px">اشترك للعب!</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:6px">للعب <b id="playPromptName" style="color:var(--text)"></b></p>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:24px">تحتاج اشتراك نشط — اشترك الآن وابدأ اللعب فوراً</p>
+    <button onclick="document.getElementById('playPrompt').classList.remove('open');openSubModal()" style="width:100%;background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;border-radius:12px;color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:14px;cursor:pointer;margin-bottom:10px">🚀 اشترك الآن</button>
+    <button onclick="document.getElementById('playPrompt').classList.remove('open')" style="width:100%;background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--muted);font-family:inherit;font-size:13px;padding:10px;cursor:pointer">لاحقاً</button>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script>
+const KEYS={packages:'vapor_packages',subs:'vapor_subs',access:'vapor_access'};
+let packages=[],selectedPlan='pro',currentPkg=null;
+const PLANS={basic:{name:'أساسي',price:'5,000',amount:5000},pro:{name:'برو',price:'10,000',amount:10000},premium:{name:'بريميم',price:'18,000',amount:18000}};
+
+function init(){
+  loadPackages();updateStats();
+  checkUserSub();
+  document.getElementById('searchInput').addEventListener('input',e=>renderPackages(e.target.value));
+  document.getElementById('cardNum').addEventListener('input',e=>{let v=e.target.value.replace(/\D/g,'').substring(0,16);e.target.value=v.replace(/(.{4})/g,'$1 ').trim();});
+  document.getElementById('cardExp').addEventListener('input',e=>{let v=e.target.value.replace(/\D/g,'');if(v.length>=2)v=v.substring(0,2)+'/'+v.substring(2,4);e.target.value=v;});
+  window.addEventListener('storage',e=>{if(e.key===KEYS.packages){loadPackages();updateStats();}if(e.key===KEYS.subs)updateStats();});
+  toggleCardFields();
+}
+
+async function loadPackages(){
+  try{
+    const data=await fbGet('packages');
+    packages=Array.isArray(data)?data:(data?Object.values(data):[]);
+    localStorage.setItem(KEYS.packages,JSON.stringify(packages));
+  }catch(e){
+    try{packages=JSON.parse(localStorage.getItem(KEYS.packages)||'[]');}catch{packages=[];}
+  }
+  renderPackages();
+  // Live update
+  fbLive('packages',data=>{packages=Array.isArray(data)?data:(data?Object.values(data):[]);localStorage.setItem(KEYS.packages,JSON.stringify(packages));renderPackages();updateStats();checkUserSub();});
+  fbLive('access',data=>{const a=Array.isArray(data)?data:(data?Object.values(data):[]);localStorage.setItem(KEYS.access,JSON.stringify(a));checkUserSub();});
+}
+
+async function updateStats(){
+  document.getElementById('statPkgs').textContent=packages.filter(p=>p.active!==false).length;
+  try{
+    const s=await fbGet('subs');
+    const sArr=Array.isArray(s)?s:(s?Object.values(s):[]);
+    document.getElementById('statSubs').textContent=sArr.filter(x=>x.status==='active').length;
+  }catch{
+    try{const s=JSON.parse(localStorage.getItem(KEYS.subs)||'[]');document.getElementById('statSubs').textContent=s.filter(x=>x.status==='active').length;}catch{}
+  }
+}
+
+function renderPackages(search=''){
+  const grid=document.getElementById('pkgGrid');
+  let f=packages.filter(p=>p.active!==false);
+  if(search.trim()){const q=search.toLowerCase();f=f.filter(p=>p.name.toLowerCase().includes(q)||(p.desc||'').toLowerCase().includes(q));}
+  if(!f.length){grid.innerHTML=`<div class="empty-state"><div class="icon">📦</div><h3>${search?'لا نتائج':'لا توجد بكجات بعد'}</h3><p>${search?'جرب كلمة أخرى':'سيقوم المسؤول بإضافة البكجات قريباً'}</p></div>`;return;}
+  grid.innerHTML=f.map(p=>`
+    <div class="pkg-card" onclick="openPkgDetail('${p.id}')" style="border-color:${p.color||'#1e3a5f'}">
+      <div class="pkg-banner" style="background:${p.bg||'linear-gradient(135deg,#0f1c30,#1e3a5f)'}">
+        <span style="font-size:65px;position:relative;z-index:1">${p.emoji||'📦'}</span>
+        <div class="pkg-banner-overlay"></div>
+        ${p.exclusive?`<span class="pkg-badge" style="background:rgba(168,85,247,.8);color:#fff">👑 حصري</span>`:''}
+      </div>
+      <div class="pkg-body">
+        <div class="pkg-name">${p.name}</div>
+        <div class="pkg-desc">${p.desc||''}</div>
+        <div class="pkg-games-list">${(p.games||[]).slice(0,4).map(g=>`<span class="pkg-game-tag">${g.emoji||'🎮'} ${g.name}</span>`).join('')}${(p.games||[]).length>4?`<span class="pkg-game-tag">+${p.games.length-4} أخرى</span>`:''}</div>
+        <div class="pkg-footer">
+          <span class="pkg-count">🎮 ${(p.games||[]).length} لعبة</span>
+          <button class="pkg-play-btn" onclick="event.stopPropagation();openPkgDetail('${p.id}')">عرض البكج ←</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openPkgDetail(id){
+  const p=packages.find(x=>x.id===id);if(!p)return;
+  currentPkg=p;
+  document.getElementById('pkgDetailBanner').style.background=p.bg||'linear-gradient(135deg,#0f1c30,#1e3a5f)';
+  document.getElementById('pkgDetailBanner').innerHTML=`<span style="font-size:70px;position:relative;z-index:1">${p.emoji||'📦'}</span>`;
+  document.getElementById('pkgDetailName').textContent=p.name;
+  document.getElementById('pkgDetailDesc').textContent=p.desc||'';
+  const games=p.games||[];
+  document.getElementById('pkgDetailGames').innerHTML=games.length?games.map(g=>`
+    <div class="pkg-game-item">
+      <div class="g-emoji">${g.emoji||'🎮'}</div>
+      <div class="g-name">${g.name}</div>
+      ${g.image?`<img src="${g.image}" style="width:100%;height:60px;object-fit:cover;border-radius:6px;margin-bottom:4px" onerror="this.style.display='none'">`:''}
+      ${g.url?`<button class="g-play" onclick="checkSubAndPlay('${g.url}','${g.name}')">▶ العب</button>`:'<div style="font-size:10px;color:var(--muted);margin-top:4px">قريباً</div>'}
+    </div>`).join(''):'<div style="color:var(--muted);font-size:13px">لا توجد ألعاب محددة بعد</div>';
+  document.getElementById('pkgDetailModal').classList.add('open');
+}
+function closePkgDetail(){document.getElementById('pkgDetailModal').classList.remove('open');}
+
+function checkSubAndPlay(url, name){
+  const phone = localStorage.getItem('vapor_user_phone')||'';
+  const access = JSON.parse(localStorage.getItem(KEYS.access)||'[]');
+  const now = new Date();
+  const hasAccess = phone && access.some(a=>{
+    const ap=a.phone.replace(/[^0-9]/g,''), up=phone.replace(/[^0-9]/g,'');
+    return (ap===up||ap.endsWith(up)||up.endsWith(ap)) && a.status==='active' && new Date(a.expiresAt)>now;
+  });
+  if(hasAccess){
+    if(url){ showToast('▶ جاري فتح '+name,'success'); setTimeout(()=>window.open(url,'_blank'),500); }
+    else showToast('⏳ رابط اللعبة لم يُضف بعد','error');
+  } else {
+    // Not subscribed — show subscribe prompt
+    showPlayPrompt(name);
+  }
+}
+
+function showPlayPrompt(name){
+  // Show subscribe prompt overlay
+  const el = document.getElementById('playPrompt');
+  const nl = document.getElementById('playPromptName');
+  if(nl) nl.textContent = name || 'هذه اللعبة';
+  if(el) el.classList.add('open');
+}
+
+function playGame(url, name){ checkSubAndPlay(url, name); }
+function handlePkgPlay(){ if(currentPkg) checkSubAndPlay(currentPkg.gameUrl||'', currentPkg.name); }
+
+function openSubModal(plan){if(plan)selectPlan(plan);document.getElementById('subModal').classList.add('open');}
+function closeSubModal(){document.getElementById('subModal').classList.remove('open');}
+function selectPlan(plan){
+  selectedPlan=plan;
+  document.querySelectorAll('.plan-option').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('opt-'+plan).classList.add('selected');
+  const p=PLANS[plan];
+  document.getElementById('summaryPlan').textContent='خطة '+p.name;
+  document.getElementById('summaryPrice').textContent=p.price+' IQD';
+}
+function toggleCardFields(){document.getElementById('cardFields').style.display=document.getElementById('payMethod').value==='mastercard'?'block':'none';}
+
+function submitSub(){
+  const name=document.getElementById('custName').value.trim();
+  const phone=document.getElementById('custPhone').value.trim();
+  if(!name||!phone){showToast('⚠️ الرجاء تعبئة جميع الحقول','error');return;}
+  const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='جاري المعالجة...';
+  setTimeout(()=>{
+    const subNum='VSUB'+Date.now().toString().slice(-6);
+    const plan=PLANS[selectedPlan];
+    const sub={id:subNum,customer:name,phone,plan:selectedPlan,planName:plan.name,amount:plan.amount,payMethod:document.getElementById('payMethod').value,status:'pending',date:new Date().toISOString(),read:false};
+    try{const subs=JSON.parse(localStorage.getItem(KEYS.subs)||'[]');subs.unshift(sub);localStorage.setItem(KEYS.subs,JSON.stringify(subs));fbSet('subs',subs);}catch{}
+    updateStats();closeSubModal();
+    document.getElementById('successSubNum').textContent='#'+subNum;
+    document.getElementById('successModal').classList.add('open');
+    localStorage.setItem('vapor_user_phone', phone);
+    setTimeout(checkUserSub, 200);
+    const waMsg=encodeURIComponent('مرحباً، أريد تفعيل اشتراك VAPOR\nالخطة: '+plan.name+'\nالمبلغ: '+plan.price+' IQD/شهر\nالاسم: '+name+'\nالجوال: '+phone+'\nرقم الاشتراك: #'+subNum);
+    setTimeout(()=>window.open('https://wa.me/9647715240130?text='+waMsg,'_blank'),1500);
+    btn.disabled=false;btn.textContent='✓ تأكيد الاشتراك';
+  },1200);
+}
+
+function checkUserSub(){
+  const phone = localStorage.getItem('vapor_user_phone')||'';
+  const banner = document.getElementById('subTopBanner');
+  const grid = document.getElementById('pkgGrid');
+  
+  if(!phone){ 
+    // Not logged in — show lock
+    
+    
+    if(banner) banner.classList.remove('show');
+    return; 
+  }
+  
+  const access = JSON.parse(localStorage.getItem(KEYS.access)||'[]');
+  const now = new Date();
+  const acc = access.find(a=>{
+    const ap=a.phone.replace(/[^0-9]/g,''), up=phone.replace(/[^0-9]/g,'');
+    return (ap===up||ap.endsWith(up)||up.endsWith(ap)) && a.status==='active' && new Date(a.expiresAt)>now;
+  });
+  
+  if(acc){
+    // Subscribed — unlock
+    
+    
+    if(banner){ 
+      banner.classList.add('show');
+      const info = document.getElementById('bannerUserInfo');
+      const exp = new Date(acc.expiresAt);
+      const days = Math.ceil((exp-now)/1000/3600/24);
+      if(info) info.textContent = '👤 '+acc.name+' | ⏳ '+days+' يوم متبقي';
+    }
+  } else {
+    // No access — show lock
+    
+    
+    if(banner) banner.classList.remove('show');
+  }
+}
+
+function goWhatsApp(){
+  const num=document.getElementById('successSubNum').textContent;
+  const msg=encodeURIComponent('مرحباً، أريد تفعيل اشتراك VAPOR\nرقم الاشتراك: '+num);
+  window.open('https://wa.me/9647715240130?text='+msg,'_blank');
+  document.getElementById('successModal').classList.remove('open');
+}
+
+document.getElementById('pkgDetailModal').addEventListener('click',function(e){if(e.target===this)closePkgDetail();});
+document.getElementById('playPrompt').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+document.getElementById('subModal').addEventListener('click',function(e){if(e.target===this)closeSubModal();});
+
+function showToast(msg,type='success'){const c=document.getElementById('toastContainer');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),3000);}
+
+appStart = init;
+</script>
+</body>
+</html>
